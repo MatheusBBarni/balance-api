@@ -1,21 +1,37 @@
 import Fastify from 'fastify'
 
-import { AccountController } from './Controller/AccountController.js'
-import { AccountService } from './Service/AccountService.js'
-import { AccountRepository } from './Repository/AccountRepository.js'
+import AccountRepository from './Repository/AccountRepository.js'
+import AccountService from './Service/AccountService.js'
 
 const fastify = Fastify({ logger: true })
 
-const accountRepository = new AccountRepository()
-const accountService = new AccountService({ accountRepository })
-const accountController = new AccountController({ accountService })
-console.log(accountController);
-
 const PORT = process.env.PORT || 3000
 
-fastify.post('/reset', accountController.reset)
-fastify.post('/event', accountController.event)
-fastify.get('/balance', accountController.balance)
+const accountRepository = new AccountRepository()
+const accountService = new AccountService({ accountRepository })
+
+fastify.post('/reset', (_, reply) => {
+  accountService.resetState()
+  reply.code(200).send()
+})
+
+fastify.post('/event', (req, reply) => {
+  const { body } = req
+  const result = accountService.action({ body })
+
+  reply
+    .code(result.status)
+    .send(result.response)
+})
+
+fastify.get('/balance',  (req, reply) => {
+  const { account_id: accountId } = req.query
+  const balance = accountService.getBalance(accountId)
+
+  reply
+    .code(balance > 0 ? 200 : 404)
+    .send(balance)
+})
 
 const start = async () => {
   try {
