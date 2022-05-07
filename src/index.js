@@ -10,9 +10,19 @@ const PORT = process.env.PORT || 3000
 const accountRepository = new AccountRepository()
 const accountService = new AccountService({ accountRepository })
 
+fastify.addContentTypeParser('application/json', { parseAs: 'string' }, function (req, body, done) {
+  try {
+    var json = JSON.parse(body)
+    done(null, json)
+  } catch (err) {
+    done(null, json)
+  }
+})
+
+
 fastify.post('/reset', (_, reply) => {
   accountService.resetState()
-  reply.code(200).send()
+  reply.code(200).send("OK")
 })
 
 fastify.post('/event', (req, reply) => {
